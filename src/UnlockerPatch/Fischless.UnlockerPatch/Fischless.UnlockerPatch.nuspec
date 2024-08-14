@@ -1,0 +1,17 @@
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Fischless.UnlockerPatch</id>
+    <version>4.8.0</version>
+    <authors>GenshinMatrix</authors>
+    <developmentDependency>true</developmentDependency>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <projectUrl>https://github.com/GenshinMatrix/UnlockerPatch</projectUrl>
+	<description>Unlocker for Unity Patch</description>
+	<repository type="git" url="https://github.com/GenshinMatrix/UnlockerPatch" commit="$commit$" />
+  </metadata>
+  <files>
+    <file src="..\x64\Release\Fischless.UnlockerPatch.dll" target="runtimes\win-x64\native" />
+  </files>
+</package>
