@@ -1,0 +1,13 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup>
+		<UnlockerPatchDllName>UnlockerPatch.dll</UnlockerPatchDllName>
+	</PropertyGroup>
+
+	<Target Name="CopyUnlockerPatchDll" BeforeTargets="AfterCompile">
+		<ItemGroup>
+			<UnlockerPatchDll Include="$(MSBuildThisFileDirectory)..\lib\net8.0-windows7.0\x64\UnlockerPatch.dll" Condition="'$(PlatformTarget)' == 'x64'" />
+		</ItemGroup>
+
+		<Copy SourceFiles="@(UnlockerPatchDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="True" />
+	</Target>
+</Project>
