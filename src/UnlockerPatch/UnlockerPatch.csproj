@@ -43,14 +43,18 @@
 		<None Include="build\package.props" Pack="True" PackagePath="\build\$(PackageId).props" />
 		<None Include="buildTransitive\package.targets" Pack="True" PackagePath="\buildTransitive\$(PackageId).targets" />
 		<None Include="buildTransitive\package.props" Pack="True" PackagePath="\buildTransitive\$(PackageId).props" />
-		<Content Include="..\UnlockerStub\x64\Release\UnlockerStub.dll">
+		<Content Include="..\..\x64\Release\UnlockerStub.dll">
 			<Pack>True</Pack>
 			<PackagePath>lib\net8.0-windows7.0\x64\UnlockerStub.dll</PackagePath>
 		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\UnlockerStub\UnlockerStub.vcxproj" />
+		<ProjectReference Include="..\UnlockerStub\UnlockerStub.vcxproj">
+			<Project>{517821e2-89ad-4ea4-b788-e8948bf27d8d}</Project>
+			<Platforms>x64</Platforms>
+			<Configuration>Release</Configuration>
+		</ProjectReference>
 	</ItemGroup>
 
 </Project>

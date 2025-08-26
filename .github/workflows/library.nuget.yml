@@ -19,8 +19,11 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Install dependencies
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore dependencies
         run: dotnet restore src/UnlockerPatch/UnlockerPatch.csproj
 
-      - name: Build
-        run: dotnet build src/UnlockerPatch/UnlockerPatch.csproj --configuration Release --no-restore
+      - name: Build solution
+        run: msbuild src/UnlockerPatch/UnlockerPatch.csproj /p:Configuration=Release /p:Platform=x64 /p:GeneratePackageOnBuild=false
