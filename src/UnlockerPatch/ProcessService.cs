@@ -1,116 +1,36 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace UnlockerPatch;
 
-public class ProcessService
+public class ProcessService()
 {
-    private static Native.WinEventProc _eventCallback = null!;
-
-    private static uint[] PriorityClass =
-    {
-        0x00000100,
-        0x00000080,
-        0x00008000,
-        0x00000020,
-        0x00004000,
-        0x00000040
-    };
-
-    private CancellationTokenSource _cts = new();
-    private readonly IntPtr _winEventHook;
-    private GCHandle _pinnedCallback;
-    private IntPtr _gameHandle = IntPtr.Zero;
-    private IntPtr _remoteUnityPlayer = IntPtr.Zero;
-    private IntPtr _remoteUserAssembly = IntPtr.Zero;
+    private nint _gameHandle = nint.Zero;
+    private nint _remoteUnityPlayer = nint.Zero;
+    private nint _remoteUserAssembly = nint.Zero;
     private int _gamePid = 0;
-    private bool _gameInForeground = true;
     private bool _failover = false;
-    private IntPtr _pFpsValue = IntPtr.Zero;
+    private nint _pFpsValue = nint.Zero;
 
-    private readonly ConfigService _configService;
-    private readonly Config _config;
-
-    private readonly IpcService _ipcService;
-
-    public ProcessService(ConfigService configService, IpcService ipcService)
-    {
-        _configService = configService;
-        _config = _configService.Config;
-
-        _eventCallback = WinEventProc;
-        _pinnedCallback = GCHandle.Alloc(_eventCallback, GCHandleType.Normal);
-        _winEventHook = Native.SetWinEventHook(
-            3, // EVENT_SYSTEM_FOREGROUND
-            3, // EVENT_SYSTEM_FOREGROUND
-            IntPtr.Zero,
-            _eventCallback,
-            0,
-            0,
-            0 // WINEVENT_OUTOFCONTEXT
-            );
-        _ipcService = ipcService;
-    }
+    private readonly IpcService _ipcService = new();
 
     public bool Start()
     {
-        if (!File.Exists(_config.GamePath))
-        {
-            UnlockerLauncher.showwindow(5);
-            Console.WriteLine(@"[ERROR]：路径无效.");
-            return false;
-        }
-
         if (IsGameRunning())
-        {
-            UnlockerLauncher.showwindow(5);
-            Console.WriteLine(@"[ERROR]：游戏正在运行.");
             return false;
-        }
-
-        if (_gameHandle != IntPtr.Zero)
-        {
-            Native.CloseHandle(_gameHandle);
-            _gameHandle = IntPtr.Zero;
-        }
 
         _failover = false;
         _ipcService.Stop();
 
-        _cts = new();
-        Process.GetProcesses()
-            .ToList()
-            .Where(x => x.ProcessName is "GenshinImpact" or "YuanShen")
-            .ToList()
-            .ForEach(x => x.Kill());
-        Task.Run(Worker, _cts.Token);
+        Task.Run(Worker, UnlockerLauncher.Token);
         return true;
-    }
-
-    private void WinEventProc(IntPtr hWinEventHook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
-    {
-        if (eventType != 3)
-            return;
-
-        if (_gameHandle == IntPtr.Zero)
-            return;
-
-        Native.GetWindowThreadProcessId(hWnd, out var pid);
-        _gameInForeground = pid == _gamePid;
-
-        if (!_config.UsePowerSave)
-            return;
-
-        uint targetPriority = _gameInForeground ? PriorityClass[_config.Priority] : 0x00000040;
-        Native.SetPriorityClass(_gameHandle, targetPriority);
     }
 
     private bool IsGameRunning()
     {
-        if (_gameHandle == IntPtr.Zero)
+        if (_gameHandle == nint.Zero)
             return false;
 
-        if (!Native.GetExitCodeProcess(_gameHandle, out var exitCode))
+        if (!Native.GetExitCodeProcess(_gameHandle, out uint exitCode))
             return false;
 
         return exitCode == 259;
@@ -118,72 +38,49 @@ public class ProcessService
 
     private async Task Worker()
     {
-        Console.WriteLine(@"Worker创建成功.", @"Info");
         STARTUPINFO si = new();
-        PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
-        uint creationFlag = _config.SuspendLoad ? 4u : 0u;
-        var gameFolder = Path.GetDirectoryName(_config.GamePath);
-        Console.WriteLine(string.Format("启动参数为：{0}", UnlockerLauncher.CommandLine));
-        if (!Native.CreateProcess(_config.GamePath, UnlockerLauncher.CommandLine, IntPtr.Zero, IntPtr.Zero, false, creationFlag, IntPtr.Zero, gameFolder!, ref si, out pi))
-        {
-            Console.WriteLine(
-                $@"CreateProcess failed ({Marshal.GetLastWin32Error()}){Environment.NewLine} {Marshal.GetLastPInvokeErrorMessage()}",
-                @"Error");
+        PROCESS_INFORMATION pi = new();
+        uint creationFlag = false ? 4u : 0u;
+        string? gameFolder = Path.GetDirectoryName(UnlockerLauncher.GamePath);
+        if (!Native.CreateProcess(UnlockerLauncher.GamePath, UnlockerLauncher.CommandLine, nint.Zero, nint.Zero, false, creationFlag, nint.Zero, gameFolder!, ref si, out pi))
             return;
-        }
-        Console.WriteLine(@"进程创建成功.", @"Info");
 
         _gamePid = pi.dwProcessId;
         _gameHandle = pi.hProcess;
 
         Native.CloseHandle(pi.hThread);
 
-        SpinWait.SpinUntil(() => ProcessUtils.GetWindowFromProcessId(_gamePid) != IntPtr.Zero);
+        SpinWait.SpinUntil(() => ProcessUtils.GetWindowFromProcessId(_gamePid) != nint.Zero);
 
         if (!SetupData())
             return;
 
-        while (IsGameRunning() && !_cts.Token.IsCancellationRequested)
+        while (IsGameRunning() && !UnlockerLauncher.Token.IsCancellationRequested)
         {
             ApplyFpsLimit();
-            await Task.Delay(1000, _cts.Token);
+            await Task.Delay(1000, UnlockerLauncher.Token);
         }
 
         if (!IsGameRunning())
         {
             _ipcService.Stop();
-            _pFpsValue = IntPtr.Zero;
-            _gameHandle = IntPtr.Zero;
-
-            if (true)
-            {
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(2000);
-                    _ipcService.Stop();
-                    _cts.Cancel();
-                    _pinnedCallback.Free();
-                    Native.UnhookWinEvent(_winEventHook);
-                    Native.CloseHandle(_gameHandle);
-                    Environment.Exit(0);
-                });
-            }
+            _pFpsValue = nint.Zero;
+            _gameHandle = nint.Zero;
+            _ipcService.Stop();
+            Native.CloseHandle(_gameHandle);
         }
     }
 
     private void ApplyFpsLimit()
     {
-        if (_pFpsValue == IntPtr.Zero)
+        if (_pFpsValue == nint.Zero)
             return;
-
-        int fpsTarget = _gameInForeground ? _config.FPSTarget : _config.UsePowerSave ? 10 : _config.FPSTarget;
 
         if (!_failover)
         {
-            var toWrite = BitConverter.GetBytes(fpsTarget);
+            var toWrite = BitConverter.GetBytes(UnlockerLauncher.TargetFps);
             if (!Native.WriteProcessMemory(_gameHandle, _pFpsValue, toWrite, 4, out _) && IsGameRunning())
             {
-                //make sure we are actually failing to write(game is running and we are getting access denied)
                 if (Marshal.GetLastWin32Error() == 5)
                 {
                     _ipcService.Start(_gamePid, _pFpsValue);
@@ -193,21 +90,21 @@ public class ProcessService
         }
         else
         {
-            _ipcService.ApplyFpsLimit(fpsTarget);
+            _ipcService.ApplyFpsLimit(UnlockerLauncher.TargetFps);
         }
     }
 
     private unsafe bool SetupData()
     {
-        var gameDir = Path.GetDirectoryName(_config.GamePath);
-        var gameName = Path.GetFileNameWithoutExtension(_config.GamePath);
+        var gameDir = Path.GetDirectoryName(UnlockerLauncher.GamePath);
+        var gameName = Path.GetFileNameWithoutExtension(UnlockerLauncher.GamePath);
         var dataDir = Path.Combine(gameDir!, $"{gameName}_Data");
 
         var unityPlayerPath = Path.Combine(gameDir!, "UnityPlayer.dll");
         var userAssemblyPath = Path.Combine(dataDir, "Native", "UserAssembly.dll");
 
-        using ModuleGuard pUnityPlayer = Native.LoadLibraryEx(unityPlayerPath, IntPtr.Zero, 32);
-        using ModuleGuard pUserAssembly = Native.LoadLibraryEx(userAssemblyPath, IntPtr.Zero, 32);
+        using ModuleGuard pUnityPlayer = Native.LoadLibraryEx(unityPlayerPath, nint.Zero, 32);
+        using ModuleGuard pUserAssembly = Native.LoadLibraryEx(userAssemblyPath, nint.Zero, 32);
 
         if (!pUnityPlayer || !pUserAssembly)
         {
@@ -217,10 +114,6 @@ public class ProcessService
                     return true;
                 goto BAD_PATTERN;
             }
-
-            Console.WriteLine(
-                @"Failed to load UnityPlayer.dll or UserAssembly.dll",
-                @"Error");
             return false;
         }
 
@@ -228,20 +121,17 @@ public class ProcessService
             return false;
 
         BAD_PATTERN:
-        Console.WriteLine(
-            @"outdated fps pattern",
-            @"Error");
         return false;
     }
 
     private unsafe bool SetupDataEx()
     {
-        var gameName = Path.GetFileNameWithoutExtension(_config.GamePath);
+        var gameName = Path.GetFileNameWithoutExtension(UnlockerLauncher.GamePath);
         var remoteExe = ProcessUtils.GetModuleBase(_gameHandle, $"{gameName}.exe");
-        if (remoteExe == IntPtr.Zero)
+        if (remoteExe == nint.Zero)
             return false;
 
-        using ModuleGuard pGenshinImpact = Native.LoadLibraryEx(_config.GamePath, IntPtr.Zero, 32);
+        using ModuleGuard pGenshinImpact = Native.LoadLibraryEx(UnlockerLauncher.GamePath, nint.Zero, 32);
         if (!pGenshinImpact)
             return false;
 
@@ -262,7 +152,7 @@ public class ProcessService
 
         localVa += *(int*)(localVa + 2) + 6;
         var rva = localVa - pGenshinImpact.BaseAddress.ToInt64();
-        _pFpsValue = (IntPtr)(remoteExe + rva);
+        _pFpsValue = (nint)(remoteExe + rva);
 
         return true;
     }
@@ -276,24 +166,18 @@ public class ProcessService
             _remoteUnityPlayer = ProcessUtils.GetModuleBase(_gameHandle, "UnityPlayer.dll");
             _remoteUserAssembly = ProcessUtils.GetModuleBase(_gameHandle, "UserAssembly.dll");
 
-            if (_remoteUnityPlayer != IntPtr.Zero && _remoteUserAssembly != IntPtr.Zero)
+            if (_remoteUnityPlayer != nint.Zero && _remoteUserAssembly != nint.Zero)
                 break;
 
             if (retries > 10)
                 break;
 
-            Task.Delay(2000, _cts.Token).Wait();
+            Task.Delay(2000, UnlockerLauncher.Token).Wait();
             retries++;
         }
 
-        if (_remoteUnityPlayer == IntPtr.Zero || _remoteUserAssembly == IntPtr.Zero)
-        {
-            Console.WriteLine(
-                @"Failed to get remote module base address",
-                @"Error");
+        if (_remoteUnityPlayer == nint.Zero || _remoteUserAssembly == nint.Zero)
             return false;
-        }
-
         return true;
     }
 }

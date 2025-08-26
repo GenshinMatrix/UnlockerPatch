@@ -1,5 +1,5 @@
-﻿using System.IO.MemoryMappedFiles;
-using System.Reflection;
+﻿using System.Diagnostics;
+using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 
 namespace UnlockerPatch;
@@ -25,14 +25,13 @@ public struct IpcData
 public class IpcService : IDisposable
 {
     private bool _started = false;
-    private IntPtr _pFpsValue = IntPtr.Zero;
+    private nint _pFpsValue = nint.Zero;
     private MemoryMappedFile? _sharedMemory = null;
     private MemoryMappedViewAccessor? _sharedMemoryAccessor = null;
-    private string _stubPath = string.Empty;
-    private ModuleGuard _stubModule = IntPtr.Zero;
-    private IntPtr _wndHook = IntPtr.Zero;
+    private ModuleGuard _stubModule = nint.Zero;
+    private nint _wndHook = nint.Zero;
 
-    public void Start(int processId, IntPtr pFpsValue)
+    public void Start(int processId, nint pFpsValue)
     {
         if (_started)
             return;
@@ -41,13 +40,11 @@ public class IpcService : IDisposable
 
         _sharedMemory = MemoryMappedFile.CreateOrOpen("2DE95FDC-6AB7-4593-BFE6-760DD4AB422B", 4096, MemoryMappedFileAccess.ReadWrite);
         _sharedMemoryAccessor = _sharedMemory.CreateViewAccessor();
-        Console.WriteLine("打开内存成功！");
+        Debug.WriteLine("打开内存成功！");
         WriteToSharedMemory(_pFpsValue, 60, IpcStatus.HostAwaiting);
 
-        _stubPath = GetUnlockerStubPath();
-
-        _stubModule = Native.LoadLibrary(_stubPath);
-        if (_stubModule == IntPtr.Zero)
+        _stubModule = Native.LoadLibrary("UnlockerStub.dll");
+        if (_stubModule == nint.Zero)
         {
             string errorMessage = $@"Failed to load stub module: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";
             Console.WriteLine(errorMessage, @"Error");
@@ -59,14 +56,14 @@ public class IpcService : IDisposable
         var threadId = Native.GetWindowThreadProcessId(targetWindow, out uint _);
 
         _wndHook = Native.SetWindowsHookEx(3, stubWndProc, _stubModule, threadId);
-        if (_wndHook == IntPtr.Zero)
+        if (_wndHook == nint.Zero)
         {
             string errorMessage = $@"Failed to set window hook: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";
             Console.WriteLine(errorMessage, @"Error");
             return;
         }
 
-        if (!Native.PostThreadMessage(threadId, 0, IntPtr.Zero, IntPtr.Zero))
+        if (!Native.PostThreadMessage(threadId, 0, nint.Zero, nint.Zero))
         {
             string errorMessage = $@"Failed to post thread message: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";
             Console.WriteLine(errorMessage, @"Error");
@@ -76,8 +73,7 @@ public class IpcService : IDisposable
         int retryCount = 0;
         while (true)
         {
-            IpcData ipcData = new IpcData();
-            _sharedMemoryAccessor.Read(0, out ipcData);
+            _sharedMemoryAccessor.Read(0, out IpcData ipcData);
 
             if (ipcData.Status == IpcStatus.ClientReady)
                 break;
@@ -97,7 +93,7 @@ public class IpcService : IDisposable
 
     public void ApplyFpsLimit(int fps)
     {
-        if (_pFpsValue == IntPtr.Zero)
+        if (_pFpsValue == nint.Zero)
             return;
 
         WriteToSharedMemory(_pFpsValue, fps, IpcStatus.None);
@@ -106,17 +102,17 @@ public class IpcService : IDisposable
     public void Stop()
     {
         _started = false;
-        _pFpsValue = IntPtr.Zero;
+        _pFpsValue = nint.Zero;
 
-        WriteToSharedMemory(IntPtr.Zero, 0, IpcStatus.HostExit);
+        WriteToSharedMemory(nint.Zero, 0, IpcStatus.HostExit);
         Task.Delay(200).Wait();
         Native.UnhookWindowsHookEx(_wndHook);
         Native.FreeLibrary(_stubModule);
     }
 
-    private void WriteToSharedMemory(IntPtr address, int fps, IpcStatus status)
+    private void WriteToSharedMemory(nint address, int fps, IpcStatus status)
     {
-        IpcData ipcData = new IpcData
+        IpcData ipcData = new()
         {
             Address = (ulong)address,
             Value = fps,
@@ -124,17 +120,6 @@ public class IpcService : IDisposable
         };
 
         _sharedMemoryAccessor?.Write(0, ref ipcData);
-    }
-
-    private string GetUnlockerStubPath()
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("unlockfps.Resources.UnlockerStub.dll");
-
-        var filePath = Path.Combine(AppContext.BaseDirectory, "UnlockerStub.dll");
-        using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-        stream!.CopyTo(fileStream);
-        return filePath;
     }
 
     public void Dispose()

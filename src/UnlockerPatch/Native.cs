@@ -3,102 +3,86 @@ using System.Text;
 
 namespace UnlockerPatch;
 
-internal class Native
+internal static class Native
 {
-    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    public delegate bool EnumWindowsProc(nint hWnd, nint lParam);
 
-    public delegate void WinEventProc(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
-
-    [DllImport("user32.dll")]
-    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    [DllImport("kernel32.dll")]
-    public static extern IntPtr GetConsoleWindow();
+    public delegate void WinEventProc(nint hWinEventHook, uint eventType, nint hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
+    public static extern bool TerminateProcess(nint hProcess, uint uExitCode);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+    public static extern int GetClassName(nint hWnd, StringBuilder lpClassName, int nMaxCount);
 
     [DllImport("user32.dll")]
-    public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+    public static extern bool EnumWindows(EnumWindowsProc enumProc, nint lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventProc lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
+    public static extern nint SetWinEventHook(uint eventMin, uint eventMax, nint hmodWinEventProc, WinEventProc lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
 
     [DllImport("user32.dll")]
-    public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+    public static extern bool UnhookWinEvent(nint hWinEventHook);
 
     [DllImport("user32.dll")]
-    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    public static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr SetWindowsHookEx(int idHook, IntPtr lpfn, IntPtr hMod, uint dwThreadId);
+    public static extern nint SetWindowsHookEx(int idHook, nint lpfn, nint hMod, uint dwThreadId);
 
     [DllImport("user32.dll")]
-    public static extern bool UnhookWindowsHookEx(IntPtr hhk);
+    public static extern bool UnhookWindowsHookEx(nint hhk);
 
     [DllImport("user32.dll")]
-    public static extern bool PostThreadMessage(uint idThread, uint Msg, IntPtr wParam, IntPtr lParam);
+    public static extern bool PostThreadMessage(uint idThread, uint Msg, nint wParam, nint lParam);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern nint OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool CloseHandle(nint hHandle);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern IntPtr CreateMutex(IntPtr lpMutexAttributes, bool bInitialOwner, string lpName);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool ReleaseMutex(IntPtr hMutex);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool CloseHandle(IntPtr hHandle);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern bool QueryFullProcessImageName(IntPtr hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
+    public static extern bool QueryFullProcessImageName(nint hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
 
     [DllImport("kernel32.dll")]
-    public static extern bool GetExitCodeProcess(IntPtr hProcess, out uint lpExitCode);
+    public static extern bool GetExitCodeProcess(nint hProcess, out uint lpExitCode);
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, [In] ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+    public static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, nint lpProcessAttributes, nint lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, nint lpEnvironment, string lpCurrentDirectory, [In] ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int nSize, out int lpNumberOfBytesWritten);
+    public static extern bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, byte[] lpBuffer, int nSize, out int lpNumberOfBytesWritten);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, uint dwFreeType);
+    public static extern bool VirtualFreeEx(nint hProcess, nint lpAddress, uint dwSize, uint dwFreeType);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+    public static extern bool VirtualProtect(nint lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern IntPtr LoadLibrary(string lpFileName);
+    public static extern nint LoadLibrary(string lpFileName);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
+    public static extern nint LoadLibraryEx(string lpFileName, nint hFile, uint dwFlags);
 
     [DllImport("kernel32.dll")]
-    public static extern void FreeLibrary(IntPtr handle);
+    public static extern void FreeLibrary(nint handle);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr GetModuleHandle(string lpModuleName);
+    public static extern nint GetModuleHandle(string lpModuleName);
 
     [DllImport("kernel32.dll")]
-    public static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
-
-    [DllImport("kernel32.dll")]
-    public static extern bool SetPriorityClass(IntPtr hProcess, uint dwPriorityClass);
+    public static extern nint GetProcAddress(nint hModule, string procedureName);
 
     [DllImport("psapi.dll", SetLastError = true)]
-    public static extern bool EnumProcessModulesEx(IntPtr hProcess, [Out] IntPtr[] lphModule, uint cb, out uint lpcbNeeded, uint dwFilterFlag);
+    public static extern bool EnumProcessModulesEx(nint hProcess, [Out] nint[] lphModule, uint cb, out uint lpcbNeeded, uint dwFilterFlag);
 
     [DllImport("psapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern uint GetModuleBaseName(IntPtr hProcess, IntPtr hModule, StringBuilder lpBaseName, uint nSize);
+    public static extern uint GetModuleBaseName(nint hProcess, nint hModule, StringBuilder lpBaseName, uint nSize);
 
     [DllImport("psapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern bool GetModuleInformation(IntPtr hProcess, IntPtr hModule, out MODULEINFO lpmodinfo, uint cb);
+    public static extern bool GetModuleInformation(nint hProcess, nint hModule, out MODULEINFO lpmodinfo, uint cb);
 
     public static bool IsWine()
     {
@@ -108,7 +92,7 @@ internal class Native
         return ver != 0;
     }
 
-    public static uint GetModuleImageSize(IntPtr lpBaseAddress)
+    public static uint GetModuleImageSize(nint lpBaseAddress)
     {
         var dosHeader = Marshal.PtrToStructure<IMAGE_DOS_HEADER>(lpBaseAddress);
         var ntHeader = Marshal.PtrToStructure<IMAGE_NT_HEADERS>(lpBaseAddress + dosHeader.e_lfanew);
@@ -117,15 +101,15 @@ internal class Native
     }
 }
 
-internal class ModuleGuard(IntPtr module) : IDisposable
+internal class ModuleGuard(nint module) : IDisposable
 {
-    public IntPtr BaseAddress { get => module & ~3; }
+    public nint BaseAddress { get => module & ~3; }
 
-    public static implicit operator ModuleGuard(IntPtr module) => new(module);
+    public static implicit operator ModuleGuard(nint module) => new(module);
 
-    public static implicit operator IntPtr(ModuleGuard guard) => guard.BaseAddress;
+    public static implicit operator nint(ModuleGuard guard) => guard.BaseAddress;
 
-    public static implicit operator bool(ModuleGuard guard) => guard.BaseAddress != IntPtr.Zero;
+    public static implicit operator bool(ModuleGuard guard) => guard.BaseAddress != nint.Zero;
 
     public void Dispose()
     {
@@ -201,8 +185,8 @@ internal static class MemoryProtection
 [StructLayout(LayoutKind.Sequential)]
 public struct PROCESS_INFORMATION
 {
-    public IntPtr hProcess;
-    public IntPtr hThread;
+    public nint hProcess;
+    public nint hThread;
     public int dwProcessId;
     public int dwThreadId;
 }
@@ -224,10 +208,10 @@ public struct STARTUPINFO
     public int dwFlags;
     public short wShowWindow;
     public short cbReserved2;
-    public IntPtr lpReserved2;
-    public IntPtr hStdInput;
-    public IntPtr hStdOutput;
-    public IntPtr hStdError;
+    public nint lpReserved2;
+    public nint hStdInput;
+    public nint hStdOutput;
+    public nint hStdError;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -342,7 +326,7 @@ public struct IMAGE_DATA_DIRECTORY
 [StructLayout(LayoutKind.Sequential)]
 public struct MODULEINFO
 {
-    public IntPtr lpBaseOfDll;
+    public nint lpBaseOfDll;
     public uint SizeOfImage;
-    public IntPtr EntryPoint;
+    public nint EntryPoint;
 }
