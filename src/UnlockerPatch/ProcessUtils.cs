@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace UnlockerPatch;
@@ -118,7 +119,7 @@ internal class ProcessUtils
             int errorCode = Marshal.GetLastWin32Error();
             if (errorCode != 299)
             {
-                Console.WriteLine($@"EnumProcessModulesEx failed ({errorCode}){Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}"
+                Debug.WriteLine($@"EnumProcessModulesEx failed ({errorCode}){Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}"
                     , @"Error");
                 return nint.Zero;
             }

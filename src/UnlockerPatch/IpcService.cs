@@ -47,7 +47,7 @@ public class IpcService : IDisposable
         if (_stubModule == nint.Zero)
         {
             string errorMessage = $@"Failed to load stub module: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";
-            Console.WriteLine(errorMessage, @"Error");
+            Debug.WriteLine(errorMessage, @"Error");
             return;
         }
 
@@ -59,14 +59,14 @@ public class IpcService : IDisposable
         if (_wndHook == nint.Zero)
         {
             string errorMessage = $@"Failed to set window hook: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";
-            Console.WriteLine(errorMessage, @"Error");
+            Debug.WriteLine(errorMessage, @"Error");
             return;
         }
 
         if (!Native.PostThreadMessage(threadId, 0, nint.Zero, nint.Zero))
         {
             string errorMessage = $@"Failed to post thread message: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";
-            Console.WriteLine(errorMessage, @"Error");
+            Debug.WriteLine(errorMessage, @"Error");
             return;
         }
 
@@ -80,7 +80,7 @@ public class IpcService : IDisposable
 
             if (retryCount >= 10)
             {
-                Console.WriteLine(@"Failed to start the unlocker.", @"Error");
+                Debug.WriteLine(@"Failed to start the unlocker.", @"Error");
                 return;
             }
 
