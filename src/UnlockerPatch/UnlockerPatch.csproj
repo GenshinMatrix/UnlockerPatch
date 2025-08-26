@@ -8,7 +8,7 @@
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<PlatformTarget>x64</PlatformTarget>
-		<Version>5.8.0</Version>
+		<Version>5.8.0.2</Version>
 		<RootNamespace>$(AssemblyName)</RootNamespace>
 		<PackageId>Fischless.UnlockerPatch</PackageId>
 		<Authors>GenshinMatrix</Authors>
@@ -39,10 +39,10 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="build\package.targets" Pack="True" PackagePath="\build\$(PackageId).targets" />
-		<None Include="build\package.props" Pack="True" PackagePath="\build\$(PackageId).props" />
-		<None Include="buildTransitive\package.targets" Pack="True" PackagePath="\buildTransitive\$(PackageId).targets" />
-		<None Include="buildTransitive\package.props" Pack="True" PackagePath="\buildTransitive\$(PackageId).props" />
+		<!--<None Include="build\package.targets" Pack="True" PackagePath="\build\$(PackageId).targets" />-->
+		<!--<None Include="build\package.props" Pack="True" PackagePath="\build\$(PackageId).props" />-->
+		<!--<None Include="buildTransitive\package.targets" Pack="True" PackagePath="\buildTransitive\$(PackageId).targets" />-->
+		<!--<None Include="buildTransitive\package.props" Pack="True" PackagePath="\buildTransitive\$(PackageId).props" />-->
 		<Content Include="..\..\x64\Release\UnlockerStub.dll">
 			<Pack>True</Pack>
 			<PackagePath>lib\net8.0-windows7.0\x64\UnlockerStub.dll</PackagePath>
