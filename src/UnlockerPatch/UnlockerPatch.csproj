@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PublishAot>true</PublishAot>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PlatformTarget>x64</PlatformTarget>
+		<DebugType>none</DebugType>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\UnlockerStub.dll" />
+	</ItemGroup>
+
+</Project>
