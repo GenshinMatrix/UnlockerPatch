@@ -1,13 +1,13 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<PropertyGroup>
-		<UnlockerPatchDllName>UnlockerPatch.dll</UnlockerPatchDllName>
+		<UnlockerStubDllName>UnlockerStub.dll</UnlockerStubDllName>
 	</PropertyGroup>
 
-	<Target Name="CopyUnlockerPatchDll" BeforeTargets="AfterCompile">
+	<Target Name="CopyUnlockerStubDll" BeforeTargets="AfterCompile">
 		<ItemGroup>
-			<UnlockerPatchDll Include="$(MSBuildThisFileDirectory)..\lib\net8.0-windows7.0\x64\UnlockerPatch.dll" Condition="'$(PlatformTarget)' == 'x64'" />
+			<UnlockerStubDll Include="$(MSBuildThisFileDirectory)..\lib\net8.0-windows7.0\x64\UnlockerStub.dll" Condition="'$(PlatformTarget)' == 'x64'" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(UnlockerPatchDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="True" />
+		<Copy SourceFiles="@(UnlockerStubDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="True" />
 	</Target>
 </Project>
