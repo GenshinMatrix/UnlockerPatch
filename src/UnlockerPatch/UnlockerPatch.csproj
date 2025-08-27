@@ -43,6 +43,9 @@
 		<!--<None Include="build\package.props" Pack="True" PackagePath="\build\$(PackageId).props" />-->
 		<!--<None Include="buildTransitive\package.targets" Pack="True" PackagePath="\buildTransitive\$(PackageId).targets" />-->
 		<!--<None Include="buildTransitive\package.props" Pack="True" PackagePath="\buildTransitive\$(PackageId).props" />-->
+	</ItemGroup>
+
+	<ItemGroup Condition="Exists('..\..\x64\Release\UnlockerStub.dll')">
 		<None Include="..\..\x64\Release\UnlockerStub.dll">
 			<Pack>true</Pack>
 			<PackagePath>runtimes/win-x64/native/</PackagePath>
