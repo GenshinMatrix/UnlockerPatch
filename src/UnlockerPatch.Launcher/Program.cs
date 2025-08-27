@@ -2,8 +2,11 @@
 
 public class Program
 {
-    static async Task Main()
+    static void Main()
     {
-        await UnlockerLauncher.StartAsync(@"D:\Program Files\Genshin Impact\Genshin Impact Game\YuanShen.exe", 120);
+        UnlockerLauncher.Start(@"D:\Program Files\Genshin Impact\Genshin Impact Game\YuanShen.exe", 120);
+
+        while (true)
+            Thread.Sleep(2000);
     }
 }

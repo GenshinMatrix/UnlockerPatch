@@ -1,13 +1,11 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<PropertyGroup>
-		<UnlockerStubDllName>UnlockerStub.dll</UnlockerStubDllName>
-	</PropertyGroup>
+	<ItemGroup>
+		<NativeCopyFiles Include="$(MSBuildThisPackageRoot)runtimes\win-x64\native\UnlockerStub.dll" />
+	</ItemGroup>
 
-	<Target Name="CopyUnlockerStubDll" BeforeTargets="AfterCompile">
-		<ItemGroup>
-			<UnlockerStubDll Include="$(MSBuildThisFileDirectory)..\lib\net8.0-windows7.0\x64\UnlockerStub.dll" Condition="'$(PlatformTarget)' == 'x64'" />
-		</ItemGroup>
-
-		<Copy SourceFiles="@(UnlockerStubDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="True" />
+	<Target Name="CopyNativeUnlockerStub" AfterTargets="Build">
+		<Copy SourceFiles="@(NativeCopyFiles)"
+			  DestinationFolder="$(OutDir)"
+			  SkipUnchangedFiles="true" />
 	</Target>
 </Project>

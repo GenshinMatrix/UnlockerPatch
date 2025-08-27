@@ -43,7 +43,7 @@ public class IpcService : IDisposable
         Debug.WriteLine("打开内存成功！");
         WriteToSharedMemory(_pFpsValue, 60, IpcStatus.HostAwaiting);
 
-        _stubModule = Native.LoadLibrary("UnlockerStub.dll");
+        _stubModule = Native.LoadLibrary(@".\runtimes\win-x64\native\UnlockerStub.dll");
         if (_stubModule == nint.Zero)
         {
             string errorMessage = $@"Failed to load stub module: {Marshal.GetLastWin32Error()}{Environment.NewLine}{Marshal.GetLastPInvokeErrorMessage()}";

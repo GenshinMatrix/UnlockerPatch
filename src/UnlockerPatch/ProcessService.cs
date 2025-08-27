@@ -21,7 +21,7 @@ public class ProcessService()
         _failover = false;
         _ipcService.Stop();
 
-        Task.Run(Worker, UnlockerLauncher.Token);
+        Task.Run(Worker);
         return true;
     }
 
@@ -55,10 +55,10 @@ public class ProcessService()
         if (!SetupData())
             return;
 
-        while (IsGameRunning() && !UnlockerLauncher.Token.IsCancellationRequested)
+        while (IsGameRunning())
         {
             ApplyFpsLimit();
-            await Task.Delay(1000, UnlockerLauncher.Token);
+            await Task.Delay(1000);
         }
 
         if (!IsGameRunning())
@@ -172,7 +172,7 @@ public class ProcessService()
             if (retries > 10)
                 break;
 
-            Task.Delay(2000, UnlockerLauncher.Token).Wait();
+            Task.Delay(2000).Wait();
             retries++;
         }
 
